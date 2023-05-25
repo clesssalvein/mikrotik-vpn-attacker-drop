@@ -1,3 +1,10 @@
+#####
+#
+# vpnAttackerDrop v.2023-05-25
+# by Cless
+#
+#####
+
 # VARS
 :local vpnAttackerDropList "vpnAttackerDrop";
 :local vpnAttackerDropListTimeout "12h";
