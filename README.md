@@ -1,6 +1,7 @@
 # Description
 
-Mikrotik RouterOS script, which monitors VPN attackers, and blocks their IPs.
+Mikrotik RouterOS script, which monitors VPN attackers, and blocks their IPs. So far it only blocks PPTP.
+
 **This is not a no 100% way to drop attackers. But it works well in most cases.**
 
 # Requirements
@@ -26,14 +27,16 @@ Paste into it the content of the vpnAttackerDrop.script
 Add scheduler task
 
 ```
-/system scheduler add interval=1m name=vpnAttackerDrop on-event=vpnAttackerDrop start-time=startup
+/system scheduler add interval=1m name=vpnAttackerDrop \
+on-event=vpnAttackerDrop start-time=startup
 ```
 
 Add firewall rules
 
 ```
 /ip firewall filter
-add action=drop chain=input comment="=common2= drop_pptp_1723_port_for_vpnAttacker" dst-port=1723 protocol=tcp src-address-list=vpnAttackerDrop
+add action=drop chain=input comment="=common2= drop_pptp_1723_port_for_vpnAttacker" \
+dst-port=1723 protocol=tcp src-address-list=vpnAttackerDrop
 ```
 
 # How it works
