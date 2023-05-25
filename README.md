@@ -41,7 +41,7 @@ dst-port=1723 protocol=tcp src-address-list=vpnAttackerDrop
 
 # How it works
 
-- Script vpnAttackerDrop is looking for a line "<xxxx>: <user> tunnel authentication failed" in the logs
+- Script vpnAttackerDrop is looking for a line "\<xxxx\>: \<user\> tunnel authentication failed" in the logs
 - If it found something, then it looks at the log line above
 - If there's a line with contents like "TCP connection established from x.x.x.x" above, it is looking for an IP-address in it and put it into the address-list "vpnAttackerDrop"
 - Firewall rules drop attackers' IP-addresses
