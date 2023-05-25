@@ -1,0 +1,75 @@
+# VARS
+:local vpnAttackerDropList "vpnAttackerDrop";
+:local vpnAttackerDropListTimeout "12h";
+
+# search each log string with topic "pptp" and message "authentication failed"
+# and do actions for them
+foreach logPptpAuthFailHexNumberRaw in=[ /log find topics~"pptp" message~"authentication failed"; ] do={
+  # spacer
+  :put "-----";
+
+  # debug
+  :put "logPptpAuthFailHexNumberRaw: $logPptpAuthFailHexNumberRaw";
+
+  # get id of the message with "authentication failed"
+  :local logPptpAuthFailHexNumber ("0x".[:pick $logPptpAuthFailHexNumberRaw ([:find $logPptpAuthFailHexNumberRaw "*"] + 1) \
+    [:len $logPptpAuthFailHexNumberRaw]]);
+
+  # get decimal id of the message with "TCP connection established from"
+  # we got it by deduction of hex id of the log strings - "auth fail" and previous log
+  # it should be the previos log string before "authentication failed"
+  :local logPptpTcpConnEstDecNumber ($logPptpAuthFailHexNumber - 0x1);
+
+  # debug
+  :put "logPptpAuthFailHexNumber: $logPptpAuthFailHexNumber";
+  :put "logPptpTcpConnEstDecNumber: $logPptpTcpConnEstDecNumber";
+
+  # convert decimal id of the message with "TCP connection established from" into hex id
+  :local hexNumberOfDigits [([:len "$logPptpAuthFailHexNumberRaw"] - 1)]
+
+  # number of digits in hex of logPptpAuthFailHexNumberRaw
+  :put "Number of digits in hex (logPptpAuthFailHexNumberRaw - 1): $hexNumberOfDigits";
+
+  :local part
+  :local hex ""
+
+  :for i from=1 to=$hexNumberOfDigits step=1 do={
+    :set part ($logPptpTcpConnEstDecNumber&0xf)
+    :set hex ([:pick "0123456789ABCDEF" $part ($part+1)].$hex)
+    :set $logPptpTcpConnEstDecNumber ($logPptpTcpConnEstDecNumber>>4)
+  }
+
+  :local logPptpTcpConnEstHexNumber ("0x".$hex)
+  :local logPptpTcpConnEstHexNumberRaw ("*".[:pick $logPptpTcpConnEstHexNumber ([:find $logPptpTcpConnEstHexNumber "0x"] + 2) \
+      [:len $logPptpTcpConnEstHexNumber]]);
+
+  # debug
+  #:put $logPptpTcpConnEstHexNumberRaw;
+
+  # do algorithm and go ahead in case of any error
+  :do { :local logPptpTcpConnEstMsg [/log get value-name=message number=[/log find .id=$logPptpTcpConnEstHexNumberRaw]];
+    # debug
+    #:put $logPptpTcpConnEstMsg;
+
+    # if there'a a message "TCP connection established from" in log string
+    if ([/log find .id="$logPptpTcpConnEstHexNumberRaw" message~"TCP connection established from"] ) do={
+      # get IP address of vpn attacker
+      :local vpnAttackerIp [[:pick "$logPptpTcpConnEstMsg" ([:find "$logPptpTcpConnEstMsg" "from"] + 5) \
+        [:len "$logPptpTcpConnEstMsg"]]]
+
+      # debug
+      #:put $vpnAttackerIp;
+
+      # if there's no IP of the attacker in the vpnAttackerDrop list
+      if ([ /ip firewall address-list find list="$vpnAttackerDropList" address="$vpnAttackerIp" ] = "" ) do={
+        # add IP of the attacker into address-list
+        /ip firewall address-list add address="$vpnAttackerIp" list="$vpnAttackerDropList" timeout="$vpnAttackerDropListTimeout";
+
+        # debug
+        :put "Adding IP *$vpnAttackerIp* to address-list *vpnAttackerDrop*";
+        #:log info message="Adding IP *$vpnAttackerIp* to address-list *vpnAttackerDrop*";
+      }
+    }
+    # message in case of any error of previos algorithm
+  } on-error={:put "smth went wrong"}
+}
