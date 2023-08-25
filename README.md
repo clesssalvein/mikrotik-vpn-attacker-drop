@@ -2,7 +2,7 @@
 
 Mikrotik RouterOS script, which monitors VPN attackers, and blocks their IPs. So far it only blocks PPTP.
 
-**This is not a no 100% way to drop attackers. But it works well in most cases.**
+**This is not a 100% way to drop attackers. But it works well in most cases.**
 
 # Requirements
 
